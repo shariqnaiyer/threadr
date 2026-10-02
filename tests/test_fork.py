@@ -126,6 +126,8 @@ class RealTmux(Sandbox):
 
     def test_real_tmux_accepts_the_invocation(self):
         tmux = shutil.which("tmux")
+        # Keep the fork alive long enough to be listed; a real agent would be.
+        self.stub("claude", "#!/bin/sh\nsleep 30\n")
         sockets = self.tmp / "tmux"
         sockets.mkdir()
         self.env.update(TMUX_TMPDIR=str(sockets), CLAUDE_CODE_SESSION_ID="sid-123",
