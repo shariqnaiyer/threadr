@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fork map</title>
+<style>
+  :root {
+    --bg: #fbfaf8; --panel: #fff; --ink: #1d1c1a; --soft: #6b6764;
+    --line: #ded9d3; --main: #2f6f4f; --fork: #9a6216; --accent: #6d4bd8;
+    --chip: #f2efea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161512; --panel: #1e1d1a; --ink: #ece8e3; --soft: #9b958e;
+      --line: #34312c; --main: #6fd39c; --fork: #e0a33d; --accent: #b39bff;
+      --chip: #262420;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161512; --panel: #1e1d1a; --ink: #ece8e3; --soft: #9b958e;
+    --line: #34312c; --main: #6fd39c; --fork: #e0a33d; --accent: #b39bff;
+    --chip: #262420;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 14px/1.55 ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+  }
+  code, .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  header {
+    padding: 26px 30px 16px; border-bottom: 1px solid var(--line);
+    display: flex; flex-wrap: wrap; gap: 16px; align-items: baseline;
+  }
+  h1 { font-size: 19px; margin: 0 0 3px; font-weight: 600; letter-spacing: -0.01em; }
+  .sub { color: var(--soft); font-size: 13px; }
+  .controls { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  input[type=search], button {
+    font: inherit; padding: 6px 11px; border-radius: 7px;
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+  }
+  input[type=search] { min-width: 230px; }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  main { padding: 22px 30px 60px; }
+  details.family {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 11px; margin-bottom: 18px;
+  }
+  details.family > summary {
+    padding: 13px 16px; cursor: pointer; display: flex; gap: 12px;
+    align-items: baseline; list-style: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before {
+    content: "\25B8"; color: var(--soft); width: 11px; flex: 0 0 auto;
+    display: inline-block; transition: transform .15s;
+  }
+  details[open] > summary::before { transform: rotate(90deg); }
+  .path { font-size: 13px; }
+  .count { color: var(--soft); font-size: 12px; margin-left: auto; text-align: right; }
+  .tree { padding: 2px 16px 16px 26px; overflow-x: auto; }
+  ul { list-style: none; margin: 0; padding-left: 20px; }
+  li { position: relative; padding: 6px 0 6px 18px; }
+  li::before {
+    content: ""; position: absolute; left: 0; top: 19px; width: 14px;
+    border-top: 1px solid var(--line);
+  }
+  li::after {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+    border-left: 1px solid var(--line);
+  }
+  li:last-child::after { bottom: calc(100% - 19px); }
+  ul.top { padding-left: 0; }
+  ul.top > li { padding-left: 0; }
+  ul.top > li::before, ul.top > li::after { display: none; }
+  .node { display: flex; gap: 9px; align-items: flex-start; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 6px; flex: 0 0 auto; }
+  .dot.main { background: var(--main); }
+  .dot.fork { background: var(--fork); }
+  .title { font-weight: 550; }
+  .meta { color: var(--soft); font-size: 12px; }
+  .chip {
+    font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase;
+    padding: 1px 6px; border-radius: 999px; background: var(--chip);
+    color: var(--soft); margin-left: 7px; vertical-align: 1.5px;
+  }
+  .quote {
+    color: var(--soft); font-style: italic; font-size: 12.5px;
+    border-left: 2px solid var(--line); padding-left: 9px; margin-top: 3px;
+    max-width: 66ch;
+  }
+  .id {
+    font-size: 11px; background: none; border: 1px dashed var(--line);
+    color: var(--soft); padding: 1px 6px; border-radius: 5px; cursor: pointer;
+  }
+  .id:hover { color: var(--ink); border-color: var(--accent); }
+  .hidden { display: none !important; }
+  footer { padding: 0 30px 44px; color: var(--soft); font-size: 12px; max-width: 84ch; }
+  footer p { margin: 6px 0; }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Fork map</h1>
+    <div class="sub" id="summary"></div>
+  </div>
+  <div class="controls">
+    <input type="search" id="filter" placeholder="filter by title, id, branch, prompt">
+    <button id="expand">Expand all</button>
+    <button id="collapse">Collapse all</button>
+  </div>
+</header>
+<main id="out"></main>
+<footer>
+  <p><b>Main line</b> is the conversation a family started as. Each
+  <b>fork</b> hangs under the session it was taken from, labelled with how
+  many messages it inherited and when it split.</p>
+  <p>Lineage is reconstructed by <a href="https://github.com/shariqnaiyer/threadr">threadr</a>, not recorded: a transcript holds no pointer to
+  its parent. Two sessions are related when they hold message ids in common,
+  and the parent is the line whose own messages started first. A
+  <b>compacted</b> session had its transcript rewritten, which can make an
+  inherited count slightly low.</p>
+  <p>Click a session id to copy the command that resumes it.</p>
+</footer>
+<script>
+const DATA = __DATA__;
+
+const fmt = s => {
+  if (!s) return "?";
+  const d = new Date(s);
+  return isNaN(d) ? s.slice(0, 10)
+    : d.toLocaleString(undefined, { day: "numeric", month: "short",
+                                    hour: "2-digit", minute: "2-digit" });
+};
+const el = (tag, cls, text) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+};
+
+function renderNode(node, top) {
+  const li = el("li");
+  const row = el("div", "node");
+  row.appendChild(el("span", "dot " + (top ? "main" : "fork")));
+
+  const body = el("div");
+  const title = el("div", "title", node.title);
+  title.appendChild(el("span", "chip", top ? "main line" : "fork"));
+  if (node.compacted) title.appendChild(el("span", "chip", "compacted"));
+  body.appendChild(title);
+
+  const meta = el("div", "meta");
+  const bits = [`${node.turns} turns`, `${node.messages} messages`];
+  if (top) bits.push(`${fmt(node.first)} → ${fmt(node.last)}`);
+  else bits.push(`forked ${fmt(node.forkedAt)}`,
+                 `inherited ${node.inherited} messages`);
+  if (node.branch) bits.push(node.branch);
+  meta.append(bits.join(" · ") + " ");
+  const copy = el("button", "id mono", node.id.slice(0, 8));
+  copy.title = "Copy: " + node.resume;
+  copy.onclick = async () => {
+    const cmd = node.resume;
+    try {
+      await navigator.clipboard.writeText(cmd);
+      copy.textContent = "copied";
+    } catch (e) {
+      copy.textContent = node.id;
+    }
+    setTimeout(() => (copy.textContent = node.id.slice(0, 8)), 1400);
+  };
+  meta.appendChild(copy);
+  body.appendChild(meta);
+
+  if (node.prompt) body.appendChild(el("div", "quote", node.prompt));
+  row.appendChild(body);
+  li.appendChild(row);
+
+  li.dataset.search = [node.title, node.id, node.branch, node.prompt]
+    .filter(Boolean).join(" ").toLowerCase();
+
+  if (node.children && node.children.length) {
+    const ul = el("ul");
+    node.children.forEach(c => ul.appendChild(renderNode(c, false)));
+    li.appendChild(ul);
+  }
+  return li;
+}
+
+function render() {
+  const out = document.getElementById("out");
+  out.textContent = "";
+  DATA.forEach((fam, i) => {
+    const d = el("details", "family");
+    if (i < 5) d.open = true;
+    const s = el("summary");
+    s.appendChild(el("span", "path mono", fam.cwd));
+    s.appendChild(el("span", "count",
+      `${fam.sessions} sessions · ${fam.forks} forks · ${fmt(fam.last)}`));
+    d.appendChild(s);
+    const wrap = el("div", "tree");
+    const ul = el("ul", "top");
+    ul.appendChild(renderNode(fam.tree, true));
+    wrap.appendChild(ul);
+    d.appendChild(wrap);
+    out.appendChild(d);
+  });
+  const sessions = DATA.reduce((n, f) => n + f.sessions, 0);
+  const forks = DATA.reduce((n, f) => n + f.forks, 0);
+  document.getElementById("summary").textContent =
+    `${DATA.length} families · ${sessions} sessions · ${forks} forks`;
+}
+
+document.getElementById("filter").addEventListener("input", e => {
+  const q = e.target.value.trim().toLowerCase();
+  document.querySelectorAll("details.family").forEach(fam => {
+    let hits = 0;
+    const items = [...fam.querySelectorAll("li")];
+    items.forEach(li => li.classList.remove("hidden"));
+    if (q) {
+      items.forEach(li => {
+        const self = (li.dataset.search || "").includes(q);
+        const kin = [...li.querySelectorAll("li")].some(
+          d => (d.dataset.search || "").includes(q));
+        if (self || kin) hits++;
+        else li.classList.add("hidden");
+      });
+    }
+    fam.classList.toggle("hidden", q !== "" && hits === 0);
+    if (q && hits) fam.open = true;
+  });
+});
+document.getElementById("expand").onclick = () =>
+  document.querySelectorAll("details.family").forEach(f => (f.open = true));
+document.getElementById("collapse").onclick = () =>
+  document.querySelectorAll("details.family").forEach(f => (f.open = false));
+
+render();
+</script>
+</body>
+</html>

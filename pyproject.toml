@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "threadr"
+dynamic = ["version"]
+description = "Find, resume, fork and map your coding-agent conversations."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Shariq Naiyer" }]
+requires-python = ">=3.9"
+keywords = ["claude-code", "agents", "sessions", "herdr", "tmux"]
+classifiers = [
+  "Environment :: Console",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+]
+
+[project.urls]
+Homepage = "https://github.com/shariqnaiyer/threadr"
+
+[project.scripts]
+threadr = "threadr.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "threadr.__version__" }
+
+[tool.setuptools.package-data]
+threadr = ["tree.html", "threadr.sh"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B"]

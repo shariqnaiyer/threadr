@@ -1,0 +1,15 @@
+{
+  "name": "threadr",
+  "description": "threadr: find, resume, fork and map your coding-agent conversations.",
+  "owner": {
+    "name": "Shariq Naiyer",
+    "url": "https://github.com/shariqnaiyer"
+  },
+  "plugins": [
+    {
+      "name": "threadr",
+      "source": "./",
+      "description": "Find, resume, fork and map your Claude Code conversations."
+    }
+  ]
+}

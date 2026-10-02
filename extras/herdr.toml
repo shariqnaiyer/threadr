@@ -1,0 +1,16 @@
+# threadr bindings for herdr. Append to ~/.config/herdr/config.toml, then:
+#   herdr config check && herdr server reload-config
+
+# prefix f: pick a past session in a pane and resume it there.
+[[keys.command]]
+key = "prefix+f"
+type = "pane"
+command = "threadr"
+description = "threadr: find and resume a session"
+
+# prefix shift+t: open the fork map in your browser.
+[[keys.command]]
+key = "prefix+shift+t"
+type = "shell"
+command = "threadr tree --html"
+description = "threadr: fork map"

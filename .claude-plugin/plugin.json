@@ -1,0 +1,13 @@
+{
+  "name": "threadr",
+  "version": "0.1.0",
+  "description": "Find, resume, fork and map your Claude Code conversations. /branch-out forks into a herdr workspace or tmux window.",
+  "author": {
+    "name": "Shariq Naiyer",
+    "url": "https://github.com/shariqnaiyer"
+  },
+  "homepage": "https://github.com/shariqnaiyer/threadr",
+  "repository": "https://github.com/shariqnaiyer/threadr",
+  "license": "MIT",
+  "keywords": ["sessions", "fork", "resume", "herdr", "tmux", "search"]
+}
