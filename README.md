@@ -1,6 +1,6 @@
 # threadr
 
-Find, resume, fork and map your coding-agent conversations. Works with [herdr](https://herdr.dev) and tmux.
+Find, resume, fork and map your coding-agent conversations. 
 
 ## Install
 
